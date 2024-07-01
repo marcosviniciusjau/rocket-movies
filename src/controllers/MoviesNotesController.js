@@ -2,12 +2,13 @@ const knex = require("../database/knex")
 
 class MoviesController {
   async create(request, response) {
-    const { title, description, movie_tags } = request.body
+    const { title, description, rating, movie_tags } = request.body
     const { user_id } = request.params
 
-    const [movie_id] = await knex("movies").insert({
+    const [movie_id] = await knex("movies_notes").insert({
       title,
       description,
+      rating,
       user_id
     })
 
@@ -27,7 +28,7 @@ class MoviesController {
   async show(request, response) {
     const { id } = request.params
 
-    const movie = await knex("movies").where({ id }).first()
+    const movie = await knex("movies_notes").where({ id }).first()
     const movie_tags = await knex("movie_tags").where({ movie_id: id }).orderBy("name")
 
     return response.json({
@@ -39,7 +40,7 @@ class MoviesController {
   async delete(request, response) {
     const { id } = request.params
 
-    await knex("movies").where({ id }).delete()
+    await knex("movies_notes").where({ id }).delete()
 
     return response.json()
   }
@@ -65,7 +66,7 @@ class MoviesController {
         .orderBy("movies.title")
         
     } else {
-      movies = await knex("movies")
+      movies = await knex("movies_notes")
       .where({ user_id })
       .whereLike("title", `%${title}%`)
       .orderBy("title")

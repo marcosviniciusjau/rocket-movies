@@ -1,11 +1,14 @@
 const { Router } = require('express')
 
-const MoviesController = require('../controllers/MoviesNotesController')
+const MoviesNotesController = require('../controllers/MoviesNotesController')
 
-const moviesRoutes = Router()
+const movieNotesRoutes = Router()
 
-const moviesController = new MoviesController()
+const movieNotesController = new MoviesNotesController()
 
-moviesRoutes.post('/', moviesController.create)
+movieNotesRoutes.get('/', movieNotesController.index)
+movieNotesRoutes.post('/:user_id', movieNotesController.create)
+movieNotesRoutes.get('/:id', movieNotesController.show)
+movieNotesRoutes.delete('/:id', movieNotesController.delete)
 
-module.exports = moviesRoutes
+module.exports = movieNotesRoutes
