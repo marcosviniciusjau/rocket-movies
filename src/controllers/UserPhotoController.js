@@ -25,3 +25,4 @@ class UserPhotoController {
     return response.json()
   }
 }
+module.exports = UserPhotoController

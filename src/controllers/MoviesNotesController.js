@@ -65,6 +65,7 @@ class MoviesController {
         .whereLike("movies.title", `%${title}%`)
         .whereIn("name", filterTags)
         .innerJoin("movies", "movies.id", "movie_tags.movie_id")
+        .groupBy("movies.id")
         .orderBy("movies.title")
         
     } else {
