@@ -1,28 +1,37 @@
-const knex = require("knex")
-const AppError = require("../utils/AppError")
-const DiskStorage = require("../providers/DiskStorage")
-class UserPhotoController {
+const sqliteConnection = require("../database/sqlite");
+const DiskStorage = require("../providers/DiskStorage");
+
+class UserphotoController {
   async update(request, response) {
-    const user_id = request.user.id
-    const userPhoto = request.file.filename
+    const user_id = request.user.id;
+    const photoFilename = request.file.filename;
 
-    const diskStorage = new DiskStorage()
+    const database = await sqliteConnection();
+    const diskStorage = new DiskStorage();
 
-    const user = await knex('users').where({ id: user_id }).first()
+    const user = await database.get("SELECT * FROM users WHERE id = (?)", [user_id]);
 
     if (!user) {
-      throw new AppError('Usuário não encontrado', 404)
+      throw new AppError("Somente usuários autenticados podem mudar o photo", 401);
     }
-    if(user.photo){
-      await diskStorage.deleteFile(user.photo)
+
+    if (user.photo) {
+      await diskStorage.deleteFile(user.photo);
     }
-    
-    const filename = await diskStorage.saveFile(userPhoto)
-    user.phot = filename
 
-    await knex("users").update(user).where({ id: user_id })
+    const filename = await diskStorage.saveFile(photoFilename);
+    user.photo = filename;
 
-    return response.json()
+    await database.run(
+      `UPDATE users SET 
+      photo = ?,
+      updated_at = ?
+      WHERE id = ?`,
+      [user.photo, new Date(), user_id]
+    );
+
+    return response.json(user);
   }
 }
-module.exports = UserPhotoController
+
+module.exports = UserphotoController;

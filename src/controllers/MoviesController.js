@@ -1,19 +1,23 @@
 const knex = require("../database/knex")
-
+const AppError = require("../utils/AppError")
 class MoviesController {
   async create(request, response) {
-    const { title, description, rating, movie_tags } = request.body
+    const { title, description, rating, tags } = request.body
     
     const user_id  = request.user.id
-
-    const [movie_id] = await knex("movies_notes").insert({
+    const checkMovieExists = await knex("movies").where({ title: title }).orderBy("title")
+  
+    if (checkMovieExists === title){
+      throw new AppError("Este filme já existe")
+    }
+    const [movie_id] = await knex("movies").insert({
       title,
       description,
       rating,
       user_id
     })
 
-    const tagsInsert = movie_tags.map(name => {
+    const tagsInsert = tags.map(name => {
       return {
         movie_id,
         name,
@@ -21,7 +25,7 @@ class MoviesController {
       }
     })
 
-    await knex("movie_tags").insert(tagsInsert)
+    await knex("tags").insert(tagsInsert)
 
     return response.json()
   }
@@ -29,33 +33,34 @@ class MoviesController {
   async show(request, response) {
     const { id } = request.params
 
-    const movie = await knex("movies_notes").where({ id }).first()
-    const movie_tags = await knex("movie_tags").where({ movie_id: id }).orderBy("name")
+    const movie = await knex("movies").where({ id }).first()
+    const tags = await knex("tags").where({ movie_id: id }).orderBy("name")
 
     return response.json({
       ...movie,
-      movie_tags
+      tags
     })
   }
 
   async delete(request, response) {
     const { id } = request.params
 
-    await knex("movies_notes").where({ id }).delete()
+    await knex("movies").where({ id }).delete()
 
     return response.json()
   }
 
   async index(request, response) {
-    const { title, movie_tags } = request.query
+    const { title, tags } = request.query
 
     const user_id  = request.user.id
+
     let movies
 
-    if (movie_tags) {
+    if (tags) {
       const filterTags = tags.split(',').map(tag => tag.trim())
 
-      movies = await knex("movie_tags")
+      movies = await knex("tags")
         .select([
           "movies.id",
           "movies.title",
@@ -64,18 +69,17 @@ class MoviesController {
         .where("movies.user_id", user_id)
         .whereLike("movies.title", `%${title}%`)
         .whereIn("name", filterTags)
-        .innerJoin("movies", "movies.id", "movie_tags.movie_id")
-        .groupBy("movies.id")
+        .innerJoin("movies", "movies.id", "tags.movie_id")
         .orderBy("movies.title")
         
     } else {
-      movies = await knex("movies_notes")
+      movies = await knex("movies")
       .where({ user_id })
       .whereLike("title", `%${title}%`)
       .orderBy("title")
     }
 
-    const userTags = await knex("movie_tags").where({ user_id })
+    const userTags = await knex("tags").where({ user_id })
     const moviesWithTags = movies.map(movie => {
       const movieTags = userTags.filter(tag => tag.movie_id === movie.id)
 
@@ -88,5 +92,4 @@ class MoviesController {
     return response.json(moviesWithTags)
   }
 }
-
 module.exports = MoviesController

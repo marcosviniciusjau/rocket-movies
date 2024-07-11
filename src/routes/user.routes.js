@@ -1,19 +1,21 @@
-const { Router } = require('express')
-const multer = require('multer')
-const uploadConfig = require('../configs/upload')
+const { Router } = require("express");
+const multer = require("multer");
 
-const UsersController = require('../controllers/UsersController')
-const UserPhotoController = require('../controllers/UserPhotoController')
-const ensureAuthenticated = require('../middlewares/ensureAuthenticated')
+const uploadConfig = require("../configs/upload");
+const ensureAuthenticated = require("../middlewares/ensureAuthenticated");
 
-const usersRoutes = Router()
-const upload= multer(uploadConfig.MULTER)
+const UsersController = require("../controllers/UsersController");
+const UserPhotoController = require("../controllers/UserPhotoController");
 
-const usersController = new UsersController()
-const userPhotoController = new UserPhotoController()
+const usersRoutes = Router();
 
-usersRoutes.post('/', usersController.create)
-usersRoutes.put('/:id', ensureAuthenticated, usersController.update)
-usersRoutes.patch('/photo', ensureAuthenticated, upload.single('photo'), userPhotoController.update)
+const usersController = new UsersController();
+const userPhotoController = new UserPhotoController();
 
-module.exports = usersRoutes
+const upload = multer(uploadConfig.MULTER);
+
+usersRoutes.post("/", usersController.create);
+usersRoutes.put("/", ensureAuthenticated, usersController.update);
+usersRoutes.patch("/photo", ensureAuthenticated, upload.single("photo"), userPhotoController.update);
+
+module.exports = usersRoutes;
